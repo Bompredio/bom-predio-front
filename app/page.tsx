@@ -1,5 +1,3 @@
-'úse client':
- 
 export default function Home() {
   return (
     <div style={{ background: 'linear-gradient(135deg, #00032E 0%, #1a237e 100%)', minHeight: '100vh', color: 'white' }}>
@@ -13,7 +11,7 @@ export default function Home() {
             Marketplace transparente + ERP integrado para condomínios em Portugal
           </p>
           <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button style={{
+            <a href="/cadastro" style={{
               padding: '15px 30px', 
               background: '#C8A969', 
               color: '#00032E', 
@@ -21,11 +19,13 @@ export default function Home() {
               borderRadius: '8px',
               fontSize: '18px',
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              display: 'inline-block'
             }}>
               Começar Agora
-            </button>
-            <button style={{
+            </a>
+            <a href="/marketplace" style={{
               padding: '15px 30px', 
               background: 'transparent', 
               color: '#C8A969', 
@@ -33,10 +33,12 @@ export default function Home() {
               borderRadius: '8px',
               fontSize: '18px',
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              display: 'inline-block'
             }}>
               Explorar Marketplace
-            </button>
+            </a>
           </div>
         </div>
 
