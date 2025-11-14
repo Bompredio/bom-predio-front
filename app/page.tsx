@@ -1,3 +1,5 @@
+'úse client':
+ 
 export default function Home() {
   return (
     <div style={{ background: 'linear-gradient(135deg, #00032E 0%, #1a237e 100%)', minHeight: '100vh', color: 'white' }}>
