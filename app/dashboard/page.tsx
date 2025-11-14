@@ -1,68 +1,145 @@
- 'úse client'
+'use client'
 
 import { useAuth } from '../components/AuthProvider'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function Dashboard() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, loading: authLoading } = useAuth()
   const [stats, setStats] = useState({
     totalCondominios: 0,
     totalServicos: 0,
     receitaMensal: 0,
     proximasAssembleias: 0
   })
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    if (profile) {
+    if (!authLoading && !user) {
+      router.push('/login')
+    } else if (profile) {
       fetchDashboardData()
     }
-  }, [profile])
+  }, [user, profile, authLoading, router])
 
   const fetchDashboardData = async () => {
-    // Buscar dados do dashboard baseado no tipo de usuário
-    const { data: condominios } = await supabase
-      .from('condominios')
-      .select('*')
-      .eq(profile.user_type === 'administrador' ? 'administradora_id' : 'sindico_id', profile.id)
+    try {
+      setLoading(true)
+      
+      let condominiosCount = 0
+      let servicosCount = 0
+      let receitaTotal = 0
 
-    const { data: servicos } = await supabase
-      .from('servicos')
-      .select('*')
-      .eq('status', 'pendente')
+      // Diferentes queries baseadas no tipo de usuário
+      if (profile?.user_type === 'administrador') {
+        // Buscar condomínios administrados
+        const { data: condominios, error } = await supabase
+          .from('condominios')
+          .select('*')
+          .eq('administradora_id', profile.id)
 
-    const { data: transacoes } = await supabase
-      .from('transacoes')
-      .select('valor')
-      .eq('status', 'pago')
+        if (!error) condominiosCount = condominios?.length || 0
 
-    const receita = transacoes?.reduce((acc, curr) => acc + parseFloat(curr.valor), 0) || 0
+        // Buscar serviços da administradora
+        const { data: servicos } = await supabase
+          .from('servicos')
+          .select('*')
+          .eq('administradora_id', profile.id)
 
-    setStats({
-      totalCondominios: condominios?.length || 0,
-      totalServicos: servicos?.length || 0,
-      receitaMensal: receita,
-      proximasAssembleias: 3 // Mock por enquanto
-    })
+        servicosCount = servicos?.length || 0
+
+      } else if (profile?.user_type === 'sindico') {
+        // Buscar condomínios onde é síndico
+        const { data: condominios } = await supabase
+          .from('condominios')
+          .select('*')
+          .eq('sindico_id', profile.id)
+
+        condominiosCount = condominios?.length || 0
+
+        // Buscar serviços do condomínio
+        const { data: servicos } = await supabase
+          .from('servicos')
+          .select('*')
+          .eq('condominio_id', condominios?.[0]?.id)
+
+        servicosCount = servicos?.length || 0
+
+      } else if (profile?.user_type === 'prestador') {
+        // Buscar serviços do prestador
+        const { data: servicos } = await supabase
+          .from('servicos')
+          .select('*')
+          .eq('prestador_id', profile.id)
+
+        servicosCount = servicos?.length || 0
+
+        // Calcular receita dos serviços
+        const { data: transacoes } = await supabase
+          .from('transacoes')
+          .select('valor')
+          .eq('status', 'pago')
+          .in('servico_id', servicos?.map(s => s.id) || [])
+
+        receitaTotal = transacoes?.reduce((acc, curr) => acc + parseFloat(curr.valor), 0) || 0
+      }
+
+      // Buscar assembleias futuras
+      const { data: assembleias } = await supabase
+        .from('assembleias')
+        .select('*')
+        .gte('data_agendada', new Date().toISOString())
+        .order('data_agendada', { ascending: true })
+
+      setStats({
+        totalCondominios: condominiosCount,
+        totalServicos: servicosCount,
+        receitaMensal: receitaTotal,
+        proximasAssembleias: assembleias?.length || 0
+      })
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/')
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh',
+        background: '#f8f9fa'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '20px' }}>⏳</div>
+          <p style={{ color: '#00032E' }}>Carregando...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!user) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h2>Por favor, faça login para acessar o dashboard</h2>
-        <a href="/login" style={{
-          padding: '10px 20px',
-          background: '#C8A969',
-          color: '#00032E',
-          textDecoration: 'none',
-          borderRadius: '5px',
-          display: 'inline-block',
-          marginTop: '10px'
-        }}>
-          Fazer Login
-        </a>
-      </div>
-    )
+    return null // Redirecionará para login
+  }
+
+  const getUserTypeLabel = () => {
+    switch (profile?.user_type) {
+      case 'administrador': return '👔 Administrador'
+      case 'sindico': return '🏢 Síndico'
+      case 'prestador': return '🔧 Prestador de Serviços'
+      default: return '👤 Condômino'
+    }
   }
 
   return (
@@ -87,26 +164,39 @@ export default function Dashboard() {
           alignItems: 'center'
         }}>
           <div>
-            <h1 style={{ color: '#00032E', margin: 0 }}>Dashboard - Bom Prédio</h1>
+            <h1 style={{ color: '#00032E', margin: 0, fontSize: '2rem' }}>Dashboard - Bom Prédio</h1>
             <p style={{ color: '#666', margin: '5px 0 0 0' }}>
-              Bem-vindo, {profile?.full_name || user.email}
+              Bem-vindo, <strong>{profile?.full_name || user.email}</strong>
+            </p>
+            <p style={{ color: '#C8A969', margin: '2px 0 0 0', fontWeight: 'bold' }}>
+              {getUserTypeLabel()}
             </p>
           </div>
           <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-            <span style={{ color: '#00032E', fontWeight: 'bold' }}>
-              {profile?.user_type === 'administrador' ? '👔 Administrador' : 
-               profile?.user_type === 'sindico' ? '🏢 Síndico' :
-               profile?.user_type === 'prestador' ? '🔧 Prestador' : '👤 Condômino'}
-            </span>
             <button 
-              onClick={signOut}
+              onClick={() => router.push('/profile')}
               style={{
                 padding: '8px 16px',
                 background: '#00032E',
                 color: '#C8A969',
                 border: 'none',
                 borderRadius: '5px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Meu Perfil
+            </button>
+            <button 
+              onClick={handleSignOut}
+              style={{
+                padding: '8px 16px',
+                background: '#C8A969',
+                color: '#00032E',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
               }}
             >
               Sair
@@ -141,7 +231,7 @@ export default function Dashboard() {
             color: 'white',
             textAlign: 'center'
           }}>
-            <h3 style={{ color: '#C8A969', margin: '0 0 15px 0' }}>Serviços Pendentes</h3>
+            <h3 style={{ color: '#C8A969', margin: '0 0 15px 0' }}>Serviços Ativos</h3>
             <p style={{ fontSize: '2.5rem', margin: 0, fontWeight: 'bold' }}>
               {stats.totalServicos}
             </p>
@@ -154,7 +244,7 @@ export default function Dashboard() {
             color: 'white',
             textAlign: 'center'
           }}>
-            <h3 style={{ color: '#C8A969', margin: '0 0 15px 0' }}>Receita Mensal</h3>
+            <h3 style={{ color: '#C8A969', margin: '0 0 15px 0' }}>Receita</h3>
             <p style={{ fontSize: '2.5rem', margin: 0, fontWeight: 'bold' }}>
               €{stats.receitaMensal}
             </p>
@@ -167,7 +257,7 @@ export default function Dashboard() {
             color: 'white',
             textAlign: 'center'
           }}>
-            <h3 style={{ color: '#C8A969', margin: '0 0 15px 0' }}>Próximas Assembleias</h3>
+            <h3 style={{ color: '#C8A969', margin: '0 0 15px 0' }}>Assembleias</h3>
             <p style={{ fontSize: '2.5rem', margin: 0, fontWeight: 'bold' }}>
               {stats.proximasAssembleias}
             </p>
@@ -180,14 +270,16 @@ export default function Dashboard() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '25px'
         }}>
-          {/* Gestão de Condomínios */}
+          {/* Gestão */}
           <div style={{
             background: 'white',
             padding: '25px',
             borderRadius: '12px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
           }}>
-            <h3 style={{ color: '#00032E', marginBottom: '20px' }}>Gestão de Condomínios</h3>
+            <h3 style={{ color: '#00032E', marginBottom: '20px', borderBottom: '2px solid #C8A969', paddingBottom: '10px' }}>
+              Gestão
+            </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button style={{
                 padding: '15px',
@@ -197,7 +289,8 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 📊 Gestão Financeira
               </button>
@@ -209,7 +302,8 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 📄 Documentos
               </button>
@@ -221,7 +315,8 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 🗣️ Comunicação
               </button>
@@ -235,18 +330,24 @@ export default function Dashboard() {
             borderRadius: '12px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
           }}>
-            <h3 style={{ color: '#00032E', marginBottom: '20px' }}>Marketplace</h3>
+            <h3 style={{ color: '#00032E', marginBottom: '20px', borderBottom: '2px solid #C8A969', paddingBottom: '10px' }}>
+              Marketplace
+            </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button style={{
-                padding: '15px',
-                background: '#C8A969',
-                color: '#00032E',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontWeight: 'bold'
-              }}>
+              <button 
+                onClick={() => router.push('/marketplace')}
+                style={{
+                  padding: '15px',
+                  background: '#C8A969',
+                  color: '#00032E',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontWeight: 'bold',
+                  fontSize: '16px'
+                }}
+              >
                 🔍 Encontrar Prestadores
               </button>
               <button style={{
@@ -257,7 +358,8 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 💰 Solicitar Orçamentos
               </button>
@@ -269,21 +371,24 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 ⭐ Avaliações
               </button>
             </div>
           </div>
 
-          {/* Assembleias & Chat */}
+          {/* Comunicação */}
           <div style={{
             background: 'white',
             padding: '25px',
             borderRadius: '12px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
           }}>
-            <h3 style={{ color: '#00032E', marginBottom: '20px' }}>Comunicação</h3>
+            <h3 style={{ color: '#00032E', marginBottom: '20px', borderBottom: '2px solid #C8A969', paddingBottom: '10px' }}>
+              Comunicação
+            </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button style={{
                 padding: '15px',
@@ -293,7 +398,8 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 🎥 Nova Assembleia
               </button>
@@ -305,7 +411,8 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 💬 Chat Online
               </button>
@@ -317,7 +424,8 @@ export default function Dashboard() {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontSize: '16px'
               }}>
                 📢 Anúncios
               </button>
