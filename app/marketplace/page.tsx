@@ -1,4 +1,10 @@
+'use client'
+
+import { useState } from 'react'
+
 export default function Marketplace() {
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  
   const services = [
     { name: 'Administração de Condomínios', providers: 45, rating: '4.5', revenue: '750M €' },
     { name: 'Limpeza e Manutenção', providers: 32, rating: '4.3', revenue: '280M €' },
@@ -42,22 +48,22 @@ export default function Marketplace() {
             gap: '25px'
           }}>
             {services.map((service, index) => (
-              <div key={index} style={{
-                padding: '30px',
-                border: '2px solid #00032E',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-                background: 'white'
-              }} onMouseOver={(e) => {
-                e.currentTarget.style.background = '#00032E'
-                e.currentTarget.style.color = '#C8A969'
-                e.currentTarget.style.transform = 'translateY(-5px)'
-              }} onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white'
-                e.currentTarget.style.color = '#00032E'
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}>
+              <div 
+                key={index}
+                style={{
+                  padding: '30px',
+                  border: '2px solid #00032E',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  background: hoveredCard === index ? '#00032E' : 'white',
+                  color: hoveredCard === index ? '#C8A969' : '#00032E',
+                  transform: hoveredCard === index ? 'translateY(-5px)' : 'translateY(0)',
+                  boxShadow: hoveredCard === index ? '0 10px 30px rgba(0,0,0,0.2)' : 'none'
+                }}
+                onMouseEnter={() => setHoveredCard(index)}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
                 <h3 style={{ marginBottom: '15px', fontSize: '1.4rem' }}>{service.name}</h3>
                 <div style={{ 
                   display: 'grid', 
@@ -75,12 +81,12 @@ export default function Marketplace() {
                   </div>
                 </div>
                 <div style={{
-                  background: 'rgba(200, 169, 105, 0.2)',
+                  background: hoveredCard === index ? 'rgba(200, 169, 105, 0.3)' : 'rgba(200, 169, 105, 0.2)',
                   padding: '10px',
                   borderRadius: '6px',
                   textAlign: 'center',
                   marginBottom: '15px',
-                  color: '#00032E'
+                  color: hoveredCard === index ? '#C8A969' : '#00032E'
                 }}>
                   <strong>Mercado: {service.revenue}</strong>
                 </div>
