@@ -1,4 +1,9 @@
+'use client'
+import { useState } from 'react'
+
 export default function ERPDashboard() {
+  const [activeButton, setActiveButton] = useState<string | null>(null)
+
   return (
     <div style={{ 
       background: '#f8f9fa', 
@@ -96,60 +101,41 @@ export default function ERPDashboard() {
               borderBottom: '2px solid #C8A969'
             }}>Gestão de Condomínios</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <button style={{
-                padding: '20px',
-                border: '2px solid #00032E',
-                borderRadius: '10px',
-                textAlign: 'left',
-                background: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }} onMouseOver={(e) => {
-                e.currentTarget.style.background = '#00032E'
-                e.currentTarget.style.color = '#C8A969'
-              }} onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white'
-                e.currentTarget.style.color = '#00032E'
-              }}>
-                <strong style={{ fontSize: '18px' }}>Gestão Financeira</strong>
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>Controle de receitas e despesas</p>
-              </button>
-              <button style={{
-                padding: '20px',
-                border: '2px solid #00032E',
-                borderRadius: '10px',
-                textAlign: 'left',
-                background: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }} onMouseOver={(e) => {
-                e.currentTarget.style.background = '#00032E'
-                e.currentTarget.style.color = '#C8A969'
-              }} onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white'
-                e.currentTarget.style.color = '#00032E'
-              }}>
-                <strong style={{ fontSize: '18px' }}>Documentos</strong>
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>Armazenamento e gestão documental</p>
-              </button>
-              <button style={{
-                padding: '20px',
-                border: '2px solid #00032E',
-                borderRadius: '10px',
-                textAlign: 'left',
-                background: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }} onMouseOver={(e) => {
-                e.currentTarget.style.background = '#00032E'
-                e.currentTarget.style.color = '#C8A969'
-              }} onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white'
-                e.currentTarget.style.color = '#00032E'
-              }}>
-                <strong style={{ fontSize: '18px' }}>Comunicação</strong>
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>Avisos e comunicados</p>
-              </button>
+              {['Gestão Financeira', 'Documentos', 'Comunicação'].map((item) => (
+                <button 
+                  key={item}
+                  style={{
+                    padding: '20px',
+                    border: '2px solid #00032E',
+                    borderRadius: '10px',
+                    textAlign: 'left',
+                    background: activeButton === item ? '#00032E' : 'white',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    color: activeButton === item ? '#C8A969' : '#00032E'
+                  }}
+                  onMouseOver={(e) => {
+                    if (activeButton !== item) {
+                      e.currentTarget.style.background = '#00032E'
+                      e.currentTarget.style.color = '#C8A969'
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (activeButton !== item) {
+                      e.currentTarget.style.background = 'white'
+                      e.currentTarget.style.color = '#00032E'
+                    }
+                  }}
+                  onClick={() => setActiveButton(item)}
+                >
+                  <strong style={{ fontSize: '18px' }}>{item}</strong>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>
+                    {item === 'Gestão Financeira' && 'Controle de receitas e despesas'}
+                    {item === 'Documentos' && 'Armazenamento e gestão documental'}
+                    {item === 'Comunicação' && 'Avisos e comunicados'}
+                  </p>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -162,60 +148,41 @@ export default function ERPDashboard() {
               borderBottom: '2px solid #C8A969'
             }}>Marketplace</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <button style={{
-                padding: '20px',
-                border: '2px solid #00032E',
-                borderRadius: '10px',
-                textAlign: 'left',
-                background: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }} onMouseOver={(e) => {
-                e.currentTarget.style.background = '#00032E'
-                e.currentTarget.style.color = '#C8A969'
-              }} onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white'
-                e.currentTarget.style.color = '#00032E'
-              }}>
-                <strong style={{ fontSize: '18px' }}>Prestadores de Serviços</strong>
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>Encontrar e contratar serviços</p>
-              </button>
-              <button style={{
-                padding: '20px',
-                border: '2px solid #00032E',
-                borderRadius: '10px',
-                textAlign: 'left',
-                background: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }} onMouseOver={(e) => {
-                e.currentTarget.style.background = '#00032E'
-                e.currentTarget.style.color = '#C8A969'
-              }} onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white'
-                e.currentTarget.style.color = '#00032E'
-              }}>
-                <strong style={{ fontSize: '18px' }}>Solicitar Orçamentos</strong>
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>Multiple quotes para serviços</p>
-              </button>
-              <button style={{
-                padding: '20px',
-                border: '2px solid #00032E',
-                borderRadius: '10px',
-                textAlign: 'left',
-                background: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s'
-              }} onMouseOver={(e) => {
-                e.currentTarget.style.background = '#00032E'
-                e.currentTarget.style.color = '#C8A969'
-              }} onMouseOut={(e) => {
-                e.currentTarget.style.background = 'white'
-                e.currentTarget.style.color = '#00032E'
-              }}>
-                <strong style={{ fontSize: '18px' }}>Avaliações</strong>
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>Avaliar prestadores e serviços</p>
-              </button>
+              {['Prestadores de Serviços', 'Solicitar Orçamentos', 'Avaliações'].map((item) => (
+                <button 
+                  key={item}
+                  style={{
+                    padding: '20px',
+                    border: '2px solid #00032E',
+                    borderRadius: '10px',
+                    textAlign: 'left',
+                    background: activeButton === item ? '#00032E' : 'white',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    color: activeButton === item ? '#C8A969' : '#00032E'
+                  }}
+                  onMouseOver={(e) => {
+                    if (activeButton !== item) {
+                      e.currentTarget.style.background = '#00032E'
+                      e.currentTarget.style.color = '#C8A969'
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (activeButton !== item) {
+                      e.currentTarget.style.background = 'white'
+                      e.currentTarget.style.color = '#00032E'
+                    }
+                  }}
+                  onClick={() => setActiveButton(item)}
+                >
+                  <strong style={{ fontSize: '18px' }}>{item}</strong>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '14px' }}>
+                    {item === 'Prestadores de Serviços' && 'Encontrar e contratar serviços'}
+                    {item === 'Solicitar Orçamentos' && 'Multiple quotes para serviços'}
+                    {item === 'Avaliações' && 'Avaliar prestadores e serviços'}
+                  </p>
+                </button>
+              ))}
             </div>
           </div>
         </div>
