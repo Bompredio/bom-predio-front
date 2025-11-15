@@ -1,14 +1,12 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
-// Importações relativas - solução temporária
-import RatingSummary from '../../../../components/RatingSummary';
-import RatingList from '../../../../components/RatingList';
-import RatingForm from '../../../../components/RatingForm';
+// Novas importações da pasta ratings
+import RatingSummary from '../../../components/ratings/Summary';
+import RatingList from '../../../components/ratings/List';
+import RatingForm from '../../../components/ratings/Form';
 
 interface Prestador {
   id: string;
@@ -66,7 +64,6 @@ export default function PrestadorProfile() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Cabeçalho do Prestador */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex items-start space-x-6">
             <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center">
@@ -107,13 +104,11 @@ export default function PrestadorProfile() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna da Esquerda - Resumo e Avaliações */}
           <div className="lg:col-span-2 space-y-6">
             <RatingSummary prestadorId={prestador.id} />
             <RatingList prestadorId={prestador.id} />
           </div>
 
-          {/* Coluna da Direita - Formulário de Avaliação */}
           <div className="space-y-6">
             {!isOwnProfile && user && (
               <RatingForm 
