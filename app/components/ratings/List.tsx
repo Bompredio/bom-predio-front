@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import RatingStars from './RatingStars';
+import RatingStars from './Stars';
 
 interface Rating {
   id: string;
