@@ -17,7 +17,9 @@ interface PrestadorStats {
 interface Servico {
   id: string;
   title: string;
-  cliente: string;
+  cliente: {
+    full_name: string;
+  }[];
   cliente_nome: string;
   data: string;
   status: 'agendado' | 'andamento' | 'concluido' | 'cancelado';
@@ -32,7 +34,7 @@ interface Avaliacao {
   created_at: string;
   cliente: {
     full_name: string;
-  };
+  }[];
 }
 
 export default function DashboardPrestador() {
@@ -48,12 +50,6 @@ export default function DashboardPrestador() {
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      fetchPrestadorData();
-    }
-  }, [user]);
 
   const fetchPrestadorData = async () => {
     if (!user) return;
@@ -114,8 +110,8 @@ export default function DashboardPrestador() {
         ? ratingsData.reduce((sum, rating) => sum + rating.rating, 0) / ratingsData.length 
         : 0;
 
-      // Calcular clientes únicos
-      const clientesUnicos = new Set(servicesData?.map(s => s.cliente?.full_name).filter(Boolean)).size;
+      // Calcular clientes únicos (CORREÇÃO APLICADA AQUI)
+      const clientesUnicos = new Set(servicesData?.map(s => s.cliente[0]?.full_name).filter(Boolean)).size;
 
       setStats({
         servicos_ativos: servicosAtivos,
@@ -130,8 +126,8 @@ export default function DashboardPrestador() {
       const servicosFormatados: Servico[] = (servicesData || []).slice(0, 5).map(service => ({
         id: service.id,
         title: service.title,
-        cliente: service.cliente?.full_name || 'Cliente',
-        cliente_nome: service.cliente?.full_name || 'Cliente',
+        cliente: service.cliente,
+        cliente_nome: service.cliente[0]?.full_name || 'Cliente',
         data: formatServiceDate(service.created_at, service.status),
         status: service.status as 'agendado' | 'andamento' | 'concluido' | 'cancelado',
         price: service.price || 0,
@@ -158,7 +154,7 @@ export default function DashboardPrestador() {
         {
           id: '1',
           title: "Reparo Hidráulico",
-          cliente: "Maria Silva - Apt 201",
+          cliente: [{ full_name: "Maria Silva" }],
           cliente_nome: "Maria Silva",
           data: "Amanhã, 14:00",
           status: "agendado",
@@ -168,7 +164,7 @@ export default function DashboardPrestador() {
         {
           id: '2',
           title: "Instalação Elétrica",
-          cliente: "João Santos - Apt 305",
+          cliente: [{ full_name: "João Santos" }],
           cliente_nome: "João Santos",
           data: "Sexta, 10:00",
           status: "agendado",
@@ -178,7 +174,7 @@ export default function DashboardPrestador() {
         {
           id: '3',
           title: "Manutenção Ar Condicionado",
-          cliente: "Ana Costa - Apt 102",
+          cliente: [{ full_name: "Ana Costa" }],
           cliente_nome: "Ana Costa",
           data: "Concluído",
           status: "concluido",
@@ -190,6 +186,12 @@ export default function DashboardPrestador() {
 
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchPrestadorData();
+    }
+  }, [user]);
 
   const formatServiceDate = (createdAt: string, status: string) => {
     if (status === 'concluido') return 'Concluído';
@@ -411,7 +413,7 @@ export default function DashboardPrestador() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h4 className="font-medium text-gray-900">{servico.title}</h4>
-                      <p className="text-sm text-gray-600">{servico.cliente}</p>
+                      <p className="text-sm text-gray-600">{servico.cliente_nome} - {servico.cliente_nome}</p>
                     </div>
                     <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(servico.status)}`}>
                       {getStatusText(servico.status)}
@@ -475,7 +477,7 @@ export default function DashboardPrestador() {
                     <p className="text-sm text-gray-700 mb-2">&ldquo;{avaliacao.comment}&rdquo;</p>
                   )}
                   <div className="flex justify-between items-center">
-                    <p className="text-xs text-gray-500">- {avaliacao.cliente.full_name}</p>
+                    <p className="text-xs text-gray-500">- {avaliacao.cliente[0]?.full_name || 'Cliente'}</p>
                     <p className="text-xs text-gray-500">
                       {new Date(avaliacao.created_at).toLocaleDateString('pt-BR')}
                     </p>
