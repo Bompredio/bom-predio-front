@@ -284,7 +284,7 @@ export default function DashboardPrestador() {
                 <span className="ml-2 text-sm font-medium">5.0</span>
               </div>
               <p className="text-sm text-gray-700 mb-2">
-                "Excelente serviço! Rápido e eficiente. Recomendo muito!"
+                &ldquo;Excelente serviço! Rápido e eficiente. Recomendo muito!&rdquo;
               </p>
               <p className="text-xs text-gray-500">- Maria Silva, há 2 dias</p>
             </div>
@@ -297,7 +297,7 @@ export default function DashboardPrestador() {
                 <span className="ml-2 text-sm font-medium">4.0</span>
               </div>
               <p className="text-sm text-gray-700 mb-2">
-                "Bom trabalho, mas chegou um pouco atrasado."
+                &ldquo;Bom trabalho, mas chegou um pouco atrasado.&rdquo;
               </p>
               <p className="text-xs text-gray-500">- João Santos, há 1 semana</p>
             </div>
