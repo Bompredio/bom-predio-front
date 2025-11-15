@@ -1,18 +1,78 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '../components/AuthProvider'
+import Link from 'next/link'
+
+interface Prestador {
+  id: string
+  nome_empresa: string
+  tipo_servico: string
+  descricao: string
+  avaliacao_media: number
+  total_avaliacoes: number
+  telefone: string
+  email_contato: string
+}
 
 export default function Marketplace() {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
-  
-  const services = [
-    { name: 'Administração de Condomínios', providers: 45, rating: '4.5', revenue: '750M €' },
-    { name: 'Limpeza e Manutenção', providers: 32, rating: '4.3', revenue: '280M €' },
-    { name: 'Manutenção de Elevadores', providers: 15, rating: '4.7', revenue: '335M €' },
-    { name: 'Segurança e Vigilância', providers: 28, rating: '4.6', revenue: '225M €' },
-    { name: 'Jardinagem', providers: 22, rating: '4.4', revenue: '93M €' },
-    { name: 'Sistemas Hidráulicos', providers: 18, rating: '4.2', revenue: '75M €' },
+  const { user, profile } = useAuth()
+  const [prestadores, setPrestadores] = useState<Prestador[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filtro, setFiltro] = useState<string>('todos')
+
+  useEffect(() => {
+    fetchPrestadores()
+  }, [])
+
+  const fetchPrestadores = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('prestadores')
+        .select('*')
+        .order('avaliacao_media', { ascending: false })
+
+      if (error) throw error
+      setPrestadores(data || [])
+    } catch (error) {
+      console.error('Erro ao buscar prestadores:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const servicosFiltrados = filtro === 'todos' 
+    ? prestadores 
+    : prestadores.filter(p => p.tipo_servico === filtro)
+
+  const tiposServico = [
+    { value: 'todos', label: 'Todos os Serviços' },
+    { value: 'limpeza', label: '🧹 Limpeza' },
+    { value: 'elevadores', label: '🛗 Elevadores' },
+    { value: 'seguranca', label: '🚨 Segurança' },
+    { value: 'jardinagem', label: '🌿 Jardinagem' },
+    { value: 'hidraulica', label: '🔧 Hidráulica' },
+    { value: 'incendio', label: '🔥 Incêndio' },
+    { value: 'desentupimento', label: '💧 Desentupimento' }
   ]
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh',
+        background: '#f8f9fa'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '20px' }}>⏳</div>
+          <p style={{ color: '#00032E' }}>Carregando prestadores...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ 
@@ -42,73 +102,161 @@ export default function Marketplace() {
             fontSize: '1.2rem'
           }}>Encontre os melhores prestadores para o seu condomínio em Portugal</p>
 
+          {/* Filtros */}
+          <div style={{ marginBottom: '30px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '10px', 
+              color: '#00032E', 
+              fontWeight: 'bold' 
+            }}>
+              Filtrar por tipo de serviço:
+            </label>
+            <select 
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              style={{
+                padding: '12px 20px',
+                border: '2px solid #00032E',
+                borderRadius: '8px',
+                fontSize: '16px',
+                background: 'white',
+                minWidth: '250px'
+              }}
+            >
+              {tiposServico.map(servico => (
+                <option key={servico.value} value={servico.value}>
+                  {servico.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lista de Prestadores */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
             gap: '25px'
           }}>
-            {services.map((service, index) => (
+            {servicosFiltrados.map((prestador) => (
               <div 
-                key={index}
+                key={prestador.id}
                 style={{
                   padding: '30px',
                   border: '2px solid #00032E',
                   borderRadius: '12px',
                   cursor: 'pointer',
                   transition: 'all 0.3s',
-                  background: hoveredCard === index ? '#00032E' : 'white',
-                  color: hoveredCard === index ? '#C8A969' : '#00032E',
-                  transform: hoveredCard === index ? 'translateY(-5px)' : 'translateY(0)',
-                  boxShadow: hoveredCard === index ? '0 10px 30px rgba(0,0,0,0.2)' : 'none'
+                  background: 'white'
                 }}
-                onMouseEnter={() => setHoveredCard(index)}
-                onMouseLeave={() => setHoveredCard(null)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#00032E'
+                  e.currentTarget.style.color = '#C8A969'
+                  e.currentTarget.style.transform = 'translateY(-5px)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white'
+                  e.currentTarget.style.color = '#00032E'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
               >
-                <h3 style={{ marginBottom: '15px', fontSize: '1.4rem' }}>{service.name}</h3>
+                <h3 style={{ marginBottom: '15px', fontSize: '1.4rem' }}>
+                  {prestador.nome_empresa}
+                </h3>
+                
                 <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '1fr 1fr', 
-                  gap: '10px',
+                  display: 'flex', 
+                  justifyContent: 'space-between',
                   marginBottom: '15px'
                 }}>
-                  <div>
-                    <div style={{ fontWeight: 'bold', color: 'inherit' }}>📊 {service.providers} prestadores</div>
-                    <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Disponíveis</div>
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 'bold', color: 'inherit' }}>⭐ {service.rating}/5</div>
-                    <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Avaliação</div>
+                  <span style={{
+                    padding: '5px 10px',
+                    background: '#C8A969',
+                    color: '#00032E',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}>
+                    {prestador.tipo_servico}
+                  </span>
+                  
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 'bold' }}>
+                      ⭐ {prestador.avaliacao_media || 'N/A'}
+                    </div>
+                    <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                      {prestador.total_avaliacoes || 0} avaliações
+                    </div>
                   </div>
                 </div>
-                <div style={{
-                  background: hoveredCard === index ? 'rgba(200, 169, 105, 0.3)' : 'rgba(200, 169, 105, 0.2)',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  textAlign: 'center',
-                  marginBottom: '15px',
-                  color: hoveredCard === index ? '#C8A969' : '#00032E'
-                }}>
-                  <strong>Mercado: {service.revenue}</strong>
+
+                {prestador.descricao && (
+                  <p style={{ 
+                    marginBottom: '20px', 
+                    lineHeight: '1.5',
+                    opacity: 0.8
+                  }}>
+                    {prestador.descricao}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <Link 
+                    href={`/marketplace/prestador/${prestador.id}`}
+                    style={{
+                      flex: 1,
+                      padding: '12px 20px',
+                      background: '#C8A969',
+                      color: '#00032E',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      display: 'inline-block'
+                    }}
+                  >
+                    Ver Perfil
+                  </Link>
+                  
+                  {user && (
+                    <Link
+                      href={`/chat?destinatario=${prestador.id}`}
+                      style={{
+                        padding: '12px 20px',
+                        background: '#00032E',
+                        color: '#C8A969',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        display: 'inline-block'
+                      }}
+                    >
+                      💬 Chat
+                    </Link>
+                  )}
                 </div>
-                <button style={{
-                  padding: '12px 20px',
-                  background: '#C8A969',
-                  color: '#00032E',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '100%',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontSize: '16px'
-                }}>
-                  Ver Prestadores
-                </button>
               </div>
             ))}
           </div>
+
+          {servicosFiltrados.length === 0 && (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px',
+              color: '#666'
+            }}>
+              <h3>Nenhum prestador encontrado</h3>
+              <p>Tente alterar o filtro ou verifique mais tarde.</p>
+            </div>
+          )}
         </div>
 
-        {/* Market Stats */}
+        {/* Estatísticas do Mercado */}
         <div style={{
           background: 'linear-gradient(135deg, #00032E 0%, #1a237e 100%)',
           borderRadius: '15px',
