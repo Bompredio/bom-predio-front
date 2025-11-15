@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    optimizePackageImports: ['@supabase/supabase-js']
-  }
+  // Configuração mais simples
 }
 
 module.exports = nextConfig
