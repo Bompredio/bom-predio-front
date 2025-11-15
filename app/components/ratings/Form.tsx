@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import RatingStars from './RatingStars';
+import RatingStars from './Stars';
 
 interface RatingFormProps {
   prestadorId: string;
