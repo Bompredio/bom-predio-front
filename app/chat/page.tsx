@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '../components/AuthProvider'
 
@@ -19,15 +19,26 @@ interface Mensagem {
 
 export default function Chat() {
   const { user, profile } = useAuth()
-  const searchParams = useSearchParams()
+  const router = useRouter()
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
   const [novaMensagem, setNovaMensagem] = useState('')
-  const [destinatario, setDestinatario] = useState(searchParams.get('destinatario') || '')
+  const [destinatario, setDestinatario] = useState('')
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Buscar destinatário da URL de forma segura
   useEffect(() => {
-    if (user) {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const destinatarioParam = urlParams.get('destinatario')
+      if (destinatarioParam) {
+        setDestinatario(destinatarioParam)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (user && destinatario) {
       fetchMensagens()
       subscribeToMessages()
     }
@@ -51,7 +62,7 @@ export default function Chat() {
           *,
           remetente:profiles(full_name)
         `)
-        .or(`and(remetente_id.eq.${user.id},destinatario_id.eq.${destinatario}),and(remetente_id.eq.${destinatario},destinatario_id.eq.${user.id})`)
+        .or(`and(remetente_id.eq.${user!.id},destinatario_id.eq.${destinatario}),and(remetente_id.eq.${destinatario},destinatario_id.eq.${user!.id})`)
         .order('created_at', { ascending: true })
 
       if (error) throw error
@@ -74,7 +85,7 @@ export default function Chat() {
           event: 'INSERT',
           schema: 'public',
           table: 'mensagens',
-          filter: `or(and(remetente_id=eq.${user.id},destinatario_id=eq.${destinatario}),and(remetente_id=eq.${destinatario},destinatario_id=eq.${user.id}))`
+          filter: `or(and(remetente_id=eq.${user!.id},destinatario_id=eq.${destinatario}),and(remetente_id=eq.${destinatario},destinatario_id=eq.${user!.id}))`
         },
         (payload) => {
           setMensagens(prev => [...prev, payload.new as Mensagem])
@@ -96,7 +107,7 @@ export default function Chat() {
         .from('mensagens')
         .insert([
           {
-            remetente_id: user.id,
+            remetente_id: user!.id,
             destinatario_id: destinatario,
             mensagem: novaMensagem.trim()
           }
@@ -113,13 +124,20 @@ export default function Chat() {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h2 style={{ color: '#00032E' }}>Faça login para acessar o chat</h2>
-        <a href="/login" style={{
-          color: '#C8A969',
-          textDecoration: 'none',
-          fontWeight: 'bold'
-        }}>
+        <button 
+          onClick={() => router.push('/login')}
+          style={{
+            padding: '10px 20px',
+            background: '#C8A969',
+            color: '#00032E',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
           Fazer Login
-        </a>
+        </button>
       </div>
     )
   }
@@ -128,13 +146,20 @@ export default function Chat() {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h2 style={{ color: '#00032E' }}>Selecione um destinatário para iniciar o chat</h2>
-        <a href="/marketplace" style={{
-          color: '#C8A969',
-          textDecoration: 'none',
-          fontWeight: 'bold'
-        }}>
+        <button 
+          onClick={() => router.push('/marketplace')}
+          style={{
+            padding: '10px 20px',
+            background: '#C8A969',
+            color: '#00032E',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
           Voltar ao Marketplace
-        </a>
+        </button>
       </div>
     )
   }
@@ -166,13 +191,18 @@ export default function Chat() {
           alignItems: 'center'
         }}>
           <h3 style={{ margin: 0 }}>💬 Chat</h3>
-          <a href="/marketplace" style={{
-            color: '#C8A969',
-            textDecoration: 'none',
-            fontWeight: 'bold'
-          }}>
+          <button 
+            onClick={() => router.push('/marketplace')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#C8A969',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
             ← Voltar
-          </a>
+          </button>
         </div>
 
         {/* Área de Mensagens */}
