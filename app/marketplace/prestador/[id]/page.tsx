@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import RatingSummary from '@/components/RatingSummary';
-import RatingList from '@/components/RatingList';
-import RatingForm from '@/components/RatingForm';
+
+// Importações relativas - solução temporária
+import RatingSummary from '../../../../components/RatingSummary';
+import RatingList from '../../../../components/RatingList';
+import RatingForm from '../../../../components/RatingForm';
 
 interface Prestador {
   id: string;
