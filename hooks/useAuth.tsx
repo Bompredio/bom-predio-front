@@ -1,14 +1,14 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 interface Profile {
   id: string;
   user_type: 'morador' | 'sindico' | 'prestador' | null;
   full_name: string | null;
-  // ... outros campos que já existem
+  avatar_url: string | null;
 }
 
 interface AuthContextType {
