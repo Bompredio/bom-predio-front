@@ -1,31 +1,43 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import UserTypeSetup from '@/components/UserTypeSetup';
 import DashboardMorador from './components/DashboardMorador';
 import DashboardSindico from './components/DashboardSindico';
 import DashboardPrestador from './components/DashboardPrestador';
-import { useEffect, useState } from 'react';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [userType, setUserType] = useState<string>('');
+  const { user, profile, loading } = useAuth();
 
-  useEffect(() => {
-    const fetchUserType = async () => {
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('user_type')
-          .eq('id', user.id)
-          .single();
-        setUserType(data?.user_type || 'morador');
-      }
-    };
-    fetchUserType();
-  }, [user]);
+  // Mostrar loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Se não está logado, redirecionar para login
+  if (!user) {
+    // Você pode usar redirect do next/navigation se preferir
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
+  }
+
+  // Se usuário não tem tipo definido, mostrar setup
+  if (!profile?.user_type) {
+    return <UserTypeSetup />;
+  }
+
+  // Renderizar dashboard baseado no tipo de usuário
   const renderDashboard = () => {
-    switch (userType) {
+    switch (profile.user_type) {
       case 'sindico':
         return <DashboardSindico />;
       case 'prestador':
@@ -36,8 +48,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+    <div className="min-h-screen bg-gray-50">
       {renderDashboard()}
     </div>
   );
