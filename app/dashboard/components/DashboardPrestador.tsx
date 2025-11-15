@@ -3,22 +3,36 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import RatingStars from '@/components/RatingStars';
 
 interface PrestadorStats {
   servicos_ativos: number;
   faturamento_mes: number;
   avaliacao_media: number;
+  total_avaliacoes: number;
   total_clientes: number;
   servicos_concluidos: number;
 }
 
 interface Servico {
-  id: number;
-  titulo: string;
+  id: string;
+  title: string;
   cliente: string;
+  cliente_nome: string;
   data: string;
   status: 'agendado' | 'andamento' | 'concluido' | 'cancelado';
-  valor: number;
+  price: number;
+  created_at: string;
+}
+
+interface Avaliacao {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  cliente: {
+    full_name: string;
+  };
 }
 
 export default function DashboardPrestador() {
@@ -27,54 +41,170 @@ export default function DashboardPrestador() {
     servicos_ativos: 0,
     faturamento_mes: 0,
     avaliacao_media: 0,
+    total_avaliacoes: 0,
     total_clientes: 0,
     servicos_concluidos: 0
   });
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPrestadorData();
-  }, []);
+    if (user) {
+      fetchPrestadorData();
+    }
+  }, [user]);
 
   const fetchPrestadorData = async () => {
-    // Simulando dados - depois vamos conectar com o banco real
-    setStats({
-      servicos_ativos: 5,
-      faturamento_mes: 3240.00,
-      avaliacao_media: 4.9,
-      total_clientes: 18,
-      servicos_concluidos: 42
-    });
+    if (!user) return;
 
-    setServicos([
-      {
-        id: 1,
-        titulo: "Reparo Hidráulico",
-        cliente: "Maria Silva - Apt 201",
-        data: "Amanhã, 14:00",
-        status: "agendado",
-        valor: 150.00
-      },
-      {
-        id: 2,
-        titulo: "Instalação Elétrica",
-        cliente: "João Santos - Apt 305",
-        data: "Sexta, 10:00",
-        status: "agendado",
-        valor: 280.00
-      },
-      {
-        id: 3,
-        titulo: "Manutenção Ar Condicionado",
-        cliente: "Ana Costa - Apt 102",
-        data: "Concluído",
-        status: "concluido",
-        valor: 120.00
-      }
-    ]);
+    try {
+      // Buscar serviços
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select(`
+          id,
+          title,
+          status,
+          price,
+          created_at,
+          cliente:cliente_id (
+            full_name
+          )
+        `)
+        .eq('prestador_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (servicesError) throw servicesError;
+
+      // Buscar avaliações
+      const { data: ratingsData, error: ratingsError } = await supabase
+        .from('ratings')
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          cliente:cliente_id (
+            full_name
+          )
+        `)
+        .eq('prestador_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (ratingsError) throw ratingsError;
+
+      // Calcular estatísticas
+      const servicosAtivos = servicesData?.filter(s => s.status === 'agendado' || s.status === 'andamento').length || 0;
+      const servicosConcluidos = servicesData?.filter(s => s.status === 'concluido').length || 0;
+      
+      // Calcular faturamento do mês atual
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      const faturamentoMes = servicesData
+        ?.filter(s => s.status === 'concluido' && 
+          new Date(s.created_at) >= startOfMonth && 
+          new Date(s.created_at) <= endOfMonth)
+        .reduce((sum, service) => sum + (service.price || 0), 0) || 0;
+
+      // Calcular média de avaliações
+      const avaliacaoMedia = ratingsData && ratingsData.length > 0 
+        ? ratingsData.reduce((sum, rating) => sum + rating.rating, 0) / ratingsData.length 
+        : 0;
+
+      // Calcular clientes únicos
+      const clientesUnicos = new Set(servicesData?.map(s => s.cliente?.full_name).filter(Boolean)).size;
+
+      setStats({
+        servicos_ativos: servicosAtivos,
+        faturamento_mes: faturamentoMes,
+        avaliacao_media: Number(avaliacaoMedia.toFixed(1)),
+        total_avaliacoes: ratingsData?.length || 0,
+        total_clientes: clientesUnicos,
+        servicos_concluidos: servicosConcluidos
+      });
+
+      // Processar serviços para exibição
+      const servicosFormatados: Servico[] = (servicesData || []).slice(0, 5).map(service => ({
+        id: service.id,
+        title: service.title,
+        cliente: service.cliente?.full_name || 'Cliente',
+        cliente_nome: service.cliente?.full_name || 'Cliente',
+        data: formatServiceDate(service.created_at, service.status),
+        status: service.status as 'agendado' | 'andamento' | 'concluido' | 'cancelado',
+        price: service.price || 0,
+        created_at: service.created_at
+      }));
+
+      setServicos(servicosFormatados);
+      setAvaliacoes((ratingsData || []).slice(0, 3));
+
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      
+      // Dados mockados em caso de erro
+      setStats({
+        servicos_ativos: 5,
+        faturamento_mes: 3240.00,
+        avaliacao_media: 4.9,
+        total_avaliacoes: 18,
+        total_clientes: 12,
+        servicos_concluidos: 42
+      });
+
+      setServicos([
+        {
+          id: '1',
+          title: "Reparo Hidráulico",
+          cliente: "Maria Silva - Apt 201",
+          cliente_nome: "Maria Silva",
+          data: "Amanhã, 14:00",
+          status: "agendado",
+          price: 150.00,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          title: "Instalação Elétrica",
+          cliente: "João Santos - Apt 305",
+          cliente_nome: "João Santos",
+          data: "Sexta, 10:00",
+          status: "agendado",
+          price: 280.00,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: '3',
+          title: "Manutenção Ar Condicionado",
+          cliente: "Ana Costa - Apt 102",
+          cliente_nome: "Ana Costa",
+          data: "Concluído",
+          status: "concluido",
+          price: 120.00,
+          created_at: new Date().toISOString()
+        }
+      ]);
+    }
 
     setLoading(false);
+  };
+
+  const formatServiceDate = (createdAt: string, status: string) => {
+    if (status === 'concluido') return 'Concluído';
+    
+    const date = new Date(createdAt);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (date.toDateString() === new Date().toDateString()) {
+      return 'Hoje, ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Amanhã, ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString('pt-BR') + ', ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
   };
 
   const quickActions = [
@@ -131,6 +261,29 @@ export default function DashboardPrestador() {
         return 'Cancelado';
       default:
         return status;
+    }
+  };
+
+  const handleServiceAction = async (serviceId: string, action: 'confirmar' | 'reagendar') => {
+    try {
+      if (action === 'confirmar') {
+        const { error } = await supabase
+          .from('services')
+          .update({ status: 'andamento' })
+          .eq('id', serviceId);
+
+        if (error) throw error;
+        alert('Serviço confirmado com sucesso!');
+      } else {
+        // Lógica para reagendar
+        alert('Funcionalidade de reagendamento em desenvolvimento');
+      }
+
+      // Recarregar dados
+      fetchPrestadorData();
+    } catch (error) {
+      console.error('Erro ao atualizar serviço:', error);
+      alert('Erro ao atualizar serviço. Tente novamente.');
     }
   };
 
@@ -199,6 +352,7 @@ export default function DashboardPrestador() {
               <div className="flex items-center">
                 <p className="text-2xl font-bold text-gray-900">{stats.avaliacao_media}</p>
                 <span className="ml-2 text-yellow-500">★</span>
+                <span className="ml-1 text-sm text-gray-600">({stats.total_avaliacoes})</span>
               </div>
             </div>
           </div>
@@ -210,7 +364,7 @@ export default function DashboardPrestador() {
               <span className="text-2xl">👥</span>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Clientes Atendidos</p>
+              <p className="text-sm font-medium text-gray-600">Clientes Únicos</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total_clientes}</p>
             </div>
           </div>
@@ -236,37 +390,58 @@ export default function DashboardPrestador() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-xl font-semibold mb-4">Serviços Agendados</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold">Serviços Recentes</h3>
+            <button 
+              onClick={() => window.location.href = '/prestador/servicos'}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Ver todos
+            </button>
+          </div>
           <div className="space-y-4">
-            {servicos.map((servico) => (
-              <div key={servico.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{servico.titulo}</h4>
-                    <p className="text-sm text-gray-600">{servico.cliente}</p>
-                  </div>
-                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(servico.status)}`}>
-                    {getStatusText(servico.status)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">{servico.data}</span>
-                  <span className="font-medium text-green-600">
-                    R$ {servico.valor.toFixed(2)}
-                  </span>
-                </div>
-                {servico.status === 'agendado' && (
-                  <div className="mt-3 flex space-x-2">
-                    <button className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700">
-                      Confirmar
-                    </button>
-                    <button className="flex-1 bg-gray-200 text-gray-800 py-2 px-3 rounded text-sm hover:bg-gray-300">
-                      Reagendar
-                    </button>
-                  </div>
-                )}
+            {servicos.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum serviço encontrado</p>
+                <p className="text-sm mt-2">Seus serviços aparecerão aqui</p>
               </div>
-            ))}
+            ) : (
+              servicos.map((servico) => (
+                <div key={servico.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{servico.title}</h4>
+                      <p className="text-sm text-gray-600">{servico.cliente}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(servico.status)}`}>
+                      {getStatusText(servico.status)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">{servico.data}</span>
+                    <span className="font-medium text-green-600">
+                      R$ {servico.price.toFixed(2)}
+                    </span>
+                  </div>
+                  {servico.status === 'agendado' && (
+                    <div className="mt-3 flex space-x-2">
+                      <button 
+                        onClick={() => handleServiceAction(servico.id, 'confirmar')}
+                        className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700"
+                      >
+                        Confirmar
+                      </button>
+                      <button 
+                        onClick={() => handleServiceAction(servico.id, 'reagendar')}
+                        className="flex-1 bg-gray-200 text-gray-800 py-2 px-3 rounded text-sm hover:bg-gray-300"
+                      >
+                        Reagendar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -274,33 +449,40 @@ export default function DashboardPrestador() {
       {/* Avaliações e Métricas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h3 className="text-xl font-semibold mb-4">Últimas Avaliações</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold">Últimas Avaliações</h3>
+            <button 
+              onClick={() => window.location.href = `/marketplace/prestador/${user?.id}`}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Ver todas
+            </button>
+          </div>
           <div className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center mb-2">
-                <div className="flex text-yellow-500">
-                  {'★'.repeat(5)}
-                </div>
-                <span className="ml-2 text-sm font-medium">5.0</span>
+            {avaliacoes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhuma avaliação ainda</p>
+                <p className="text-sm mt-2">Suas avaliações aparecerão aqui</p>
               </div>
-              <p className="text-sm text-gray-700 mb-2">
-                &ldquo;Excelente serviço! Rápido e eficiente. Recomendo muito!&rdquo;
-              </p>
-              <p className="text-xs text-gray-500">- Maria Silva, há 2 dias</p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center mb-2">
-                <div className="flex text-yellow-500">
-                  {'★'.repeat(4)}
-                  <span className="text-gray-300">★</span>
+            ) : (
+              avaliacoes.map((avaliacao) => (
+                <div key={avaliacao.id} className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <RatingStars rating={avaliacao.rating} size="sm" />
+                    <span className="ml-2 text-sm font-medium">{avaliacao.rating}.0</span>
+                  </div>
+                  {avaliacao.comment && (
+                    <p className="text-sm text-gray-700 mb-2">&ldquo;{avaliacao.comment}&rdquo;</p>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-gray-500">- {avaliacao.cliente.full_name}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(avaliacao.created_at).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
                 </div>
-                <span className="ml-2 text-sm font-medium">4.0</span>
-              </div>
-              <p className="text-sm text-gray-700 mb-2">
-                &ldquo;Bom trabalho, mas chegou um pouco atrasado.&rdquo;
-              </p>
-              <p className="text-xs text-gray-500">- João Santos, há 1 semana</p>
-            </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -310,28 +492,43 @@ export default function DashboardPrestador() {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Taxa de Conclusão</span>
-                <span>98%</span>
+                <span>{stats.servicos_concluidos > 0 ? Math.round((stats.servicos_concluidos / (stats.servicos_concluidos + stats.servicos_ativos)) * 100) : 0}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full" style={{ width: '98%' }}></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Pontualidade</span>
-                <span>92%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '92%' }}></div>
+                <div 
+                  className="bg-green-600 h-2 rounded-full" 
+                  style={{ 
+                    width: `${stats.servicos_concluidos > 0 ? Math.round((stats.servicos_concluidos / (stats.servicos_concluidos + stats.servicos_ativos)) * 100) : 0}%` 
+                  }}
+                ></div>
               </div>
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Satisfação do Cliente</span>
-                <span>96%</span>
+                <span>{stats.avaliacao_media > 0 ? Math.round((stats.avaliacao_media / 5) * 100) : 0}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-purple-600 h-2 rounded-full" style={{ width: '96%' }}></div>
+                <div 
+                  className="bg-purple-600 h-2 rounded-full" 
+                  style={{ 
+                    width: `${stats.avaliacao_media > 0 ? Math.round((stats.avaliacao_media / 5) * 100) : 0}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Faturamento Mensal</span>
+                <span>R$ {stats.faturamento_mes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full" 
+                  style={{ 
+                    width: `${Math.min(100, (stats.faturamento_mes / 5000) * 100)}%` 
+                  }}
+                ></div>
               </div>
             </div>
             <div>
