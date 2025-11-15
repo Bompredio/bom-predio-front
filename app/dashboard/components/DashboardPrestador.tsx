@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import RatingStars from '@/components/ratings/Stars';
+import RatingStars from '../../components/ratings/Stars';
 
 interface PrestadorStats {
   servicos_ativos: number;
