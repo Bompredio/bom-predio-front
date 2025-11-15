@@ -53,6 +53,28 @@ export default function UserTypeSetup() {
     }
   ];
 
+  const getBorderColor = (typeId: string, currentColor: string) => {
+    if (userType !== typeId) return 'border-gray-200 hover:border-gray-300';
+    
+    switch (currentColor) {
+      case 'blue': return 'border-blue-500 bg-blue-50';
+      case 'green': return 'border-green-500 bg-green-50';
+      case 'purple': return 'border-purple-500 bg-purple-50';
+      default: return 'border-blue-500 bg-blue-50';
+    }
+  };
+
+  const getCheckboxColor = (typeId: string, currentColor: string) => {
+    if (userType !== typeId) return 'border-gray-400';
+    
+    switch (currentColor) {
+      case 'blue': return 'border-blue-500 bg-blue-500';
+      case 'green': return 'border-green-500 bg-green-500';
+      case 'purple': return 'border-purple-500 bg-purple-500';
+      default: return 'border-blue-500 bg-blue-500';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
@@ -69,19 +91,11 @@ export default function UserTypeSetup() {
           {userTypes.map((type) => (
             <div 
               key={type.id}
-              className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                userType === type.id 
-                  ? `border-${type.color}-500 bg-${type.color}-50` 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${getBorderColor(type.id, type.color)}`}
               onClick={() => setUserType(type.id)}
             >
               <div className="flex items-center space-x-3">
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  userType === type.id 
-                    ? `border-${type.color}-500 bg-${type.color}-500` 
-                    : 'border-gray-400'
-                }`}>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${getCheckboxColor(type.id, type.color)}`}>
                   {userType === type.id && (
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   )}
