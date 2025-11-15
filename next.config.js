@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuração básica - removemos experimental.appDir
+  experimental: {
+    optimizePackageImports: ['@supabase/supabase-js']
+  }
 }
+
+module.exports = nextConfig
