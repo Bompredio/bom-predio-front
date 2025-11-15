@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import UserTypeSetup from '@/components/UserTypeSetup';
+import UserTypeSetup from '../components/UserTypeSetup';
 import DashboardMorador from './components/DashboardMorador';
 import DashboardSindico from './components/DashboardSindico';
 import DashboardPrestador from './components/DashboardPrestador';
@@ -23,7 +23,6 @@ export default function DashboardPage() {
 
   // Se não está logado, redirecionar para login
   if (!user) {
-    // Você pode usar redirect do next/navigation se preferir
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
