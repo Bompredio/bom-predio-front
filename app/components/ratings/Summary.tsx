@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import RatingStars from './RatingStars';
+import RatingStars from './Stars';
 
 interface RatingSummaryProps {
   prestadorId: string;
@@ -77,14 +77,12 @@ export default function RatingSummary({ prestadorId }: RatingSummaryProps) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border">
       <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-        {/* Nota Geral */}
         <div className="text-center">
           <div className="text-4xl font-bold text-gray-900">{stats.average}</div>
           <RatingStars rating={stats.average} size="lg" />
           <p className="text-sm text-gray-600 mt-2">{stats.total} avaliações</p>
         </div>
 
-        {/* Distribuição */}
         <div className="flex-1 space-y-2">
           {[5, 4, 3, 2, 1].map((star) => (
             <div key={star} className="flex items-center space-x-2">
