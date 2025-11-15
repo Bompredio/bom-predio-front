@@ -1,129 +1,94 @@
-'use client';
+```typescript
+'use client'
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react'
+import { supabase, UserType } from '@/lib/supabase'
+import { useAuthState } from '@/hooks/useAuth'
 
 export default function UserTypeSetup() {
-  const { user } = useAuth();
-  const [userType, setUserType] = useState<'morador' | 'sindico' | 'prestador'>('morador');
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, refreshProfile } = useAuthState()
+  const [selectedType, setSelectedType] = useState<UserType | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSave = async () => {
-    if (!user) return;
+  const handleUserTypeSelect = async (userType: UserType) => {
+    if (!user) return
     
-    setIsLoading(true);
-    
-    const { error } = await supabase
-      .from('profiles')
-      .update({ user_type: userType })
-      .eq('id', user.id);
+    setIsLoading(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ user_type: userType })
+        .eq('id', user.id)
 
-    if (error) {
-      console.error('Erro ao salvar tipo de usuário:', error);
-      alert('Erro ao salvar tipo de usuário. Tente novamente.');
-    } else {
-      // Força recarregamento para atualizar o contexto de auth
-      window.location.reload();
+      if (error) throw error
+
+      await refreshProfile()
+    } catch (error) {
+      console.error('Error setting user type:', error)
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false);
-  };
+  }
 
   const userTypes = [
     {
-      id: 'morador' as const,
-      title: 'Morador',
-      description: 'Acesso aos serviços do condomínio e marketplace',
-      icon: '🏠',
-      color: 'blue'
+      type: 'morador' as UserType,
+      title: 'Morador/Síndico',
+      description: 'Você mora em um condomínio e quer gerenciar sua residência',
+      icon: '🏠'
     },
     {
-      id: 'sindico' as const,
-      title: 'Síndico',
-      description: 'Gestão completa do condomínio e administração',
-      icon: '🏢',
-      color: 'green'
+      type: 'administradora' as UserType,
+      title: 'Administradora',
+      description: 'Empresa profissional de administração de condomínios',
+      icon: '🏢'
     },
     {
-      id: 'prestador' as const,
-      title: 'Prestador',
-      description: 'Oferecer serviços no marketplace do condomínio',
-      icon: '🔧',
-      color: 'purple'
+      type: 'prestador' as UserType,
+      title: 'Prestador de Serviços',
+      description: 'Fornece serviços especializados para condomínios',
+      icon: '🔧'
     }
-  ];
-
-  const getBorderColor = (typeId: string, currentColor: string) => {
-    if (userType !== typeId) return 'border-gray-200 hover:border-gray-300';
-    
-    switch (currentColor) {
-      case 'blue': return 'border-blue-500 bg-blue-50';
-      case 'green': return 'border-green-500 bg-green-50';
-      case 'purple': return 'border-purple-500 bg-purple-50';
-      default: return 'border-blue-500 bg-blue-50';
-    }
-  };
-
-  const getCheckboxColor = (typeId: string, currentColor: string) => {
-    if (userType !== typeId) return 'border-gray-400';
-    
-    switch (currentColor) {
-      case 'blue': return 'border-blue-500 bg-blue-500';
-      case 'green': return 'border-green-500 bg-green-500';
-      case 'purple': return 'border-purple-500 bg-purple-500';
-      default: return 'border-blue-500 bg-blue-500';
-    }
-  };
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Bem-vindo ao Bom Prédio! 🏢
+    <div className="min-h-screen bg-primary-navy flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-primary-gold mb-4">
+            Bom Prédio
           </h1>
-          <p className="text-gray-600">
-            Para personalizar sua experiência, selecione seu tipo de usuário:
+          <p className="text-xl text-white">
+            Escolha o seu perfil na plataforma
           </p>
         </div>
 
-        <div className="space-y-4 mb-8">
-          {userTypes.map((type) => (
-            <div 
-              key={type.id}
-              className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${getBorderColor(type.id, type.color)}`}
-              onClick={() => setUserType(type.id)}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {userTypes.map((userType) => (
+            <button
+              key={userType.type}
+              onClick={() => handleUserTypeSelect(userType.type)}
+              disabled={isLoading}
+              className={`p-6 rounded-xl text-left transition-all duration-200 ${
+                selectedType === userType.type
+                  ? 'bg-primary-gold text-primary-navy transform scale-105'
+                  : 'bg-white text-primary-navy hover:bg-gray-50'
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              <div className="flex items-center space-x-3">
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${getCheckboxColor(type.id, type.color)}`}>
-                  {userType === type.id && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{type.icon}</span>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{type.title}</h3>
-                    <p className="text-sm text-gray-600">{type.description}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <div className="text-3xl mb-4">{userType.icon}</div>
+              <h3 className="text-xl font-semibold mb-2">{userType.title}</h3>
+              <p className="text-sm opacity-75">{userType.description}</p>
+            </button>
           ))}
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Salvando...' : 'Continuar para o Dashboard'}
-        </button>
-        
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Você poderá alterar isso depois nas configurações do perfil
-        </p>
+        {isLoading && (
+          <div className="text-center mt-6">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-gold"></div>
+            <p className="text-white mt-2">Configurando sua conta...</p>
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }
