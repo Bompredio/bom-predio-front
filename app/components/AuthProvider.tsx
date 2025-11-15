@@ -19,6 +19,7 @@ interface AuthContextType {
   profile: Profile | null
   signOut: () => Promise<void>
   loading: boolean
+  error: string | null
   refreshProfile: () => Promise<void>
 }
 
@@ -29,9 +30,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('🔄 Buscando perfil para usuário:', userId)
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -39,13 +42,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
       
       if (error) {
-        console.error('Error fetching profile:', error)
+        console.error('❌ Erro ao buscar perfil:', error)
+        setError(`Erro ao carregar perfil: ${error.message}`)
         setProfile(null)
       } else {
+        console.log('✅ Perfil carregado:', data)
         setProfile(data)
+        setError(null)
       }
-    } catch (error) {
-      console.error('Error in fetchProfile:', error)
+    } catch (error: any) {
+      console.error('❌ Erro em fetchProfile:', error)
+      setError(`Erro: ${error.message}`)
       setProfile(null)
     }
   }
@@ -59,15 +66,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        console.log('🔄 Obtendo sessão...')
+        setLoading(true)
+        setError(null)
+        
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Erro ao obter sessão:', error)
+          setError(`Erro de autenticação: ${error.message}`)
+          return
+        }
+
+        console.log('✅ Sessão:', session)
         setSession(session)
         setUser(session?.user ?? null)
         
         if (session?.user) {
           await fetchProfile(session.user.id)
+        } else {
+          setProfile(null)
         }
-      } catch (error) {
-        console.error('Error getting session:', error)
+      } catch (error: any) {
+        console.error('❌ Erro em getSession:', error)
+        setError(`Erro: ${error.message}`)
       } finally {
         setLoading(false)
       }
@@ -77,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Mudança de estado de auth:', event, session)
         setSession(session)
         setUser(session?.user ?? null)
         
@@ -95,8 +118,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
-    } catch (error) {
-      console.error('Error signing out:', error)
+      setError(null)
+    } catch (error: any) {
+      console.error('❌ Erro ao fazer logout:', error)
+      setError(`Erro ao sair: ${error.message}`)
     }
   }
 
@@ -107,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile, 
       signOut, 
       loading,
+      error,
       refreshProfile 
     }}>
       {children}
