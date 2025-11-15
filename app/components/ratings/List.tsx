@@ -11,7 +11,7 @@ interface Rating {
   created_at: string;
   cliente: {
     full_name: string;
-  };
+  }[];
 }
 
 interface RatingListProps {
@@ -21,10 +21,6 @@ interface RatingListProps {
 export default function RatingList({ prestadorId }: RatingListProps) {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchRatings();
-  }, [prestadorId]);
 
   const fetchRatings = async () => {
     const { data, error } = await supabase
@@ -49,6 +45,10 @@ export default function RatingList({ prestadorId }: RatingListProps) {
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetchRatings();
+  }, [prestadorId]);
+
   if (loading) {
     return <div className="text-center py-4">Carregando avaliações...</div>;
   }
@@ -65,7 +65,9 @@ export default function RatingList({ prestadorId }: RatingListProps) {
         <div key={rating.id} className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <p className="font-medium text-gray-900">{rating.cliente.full_name}</p>
+              <p className="font-medium text-gray-900">
+                {rating.cliente[0]?.full_name || 'Cliente'}
+              </p>
               <RatingStars rating={rating.rating} size="sm" />
             </div>
             <span className="text-sm text-gray-500">
