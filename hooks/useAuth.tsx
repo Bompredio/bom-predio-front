@@ -1,89 +1,83 @@
-'use client';
+```typescript
+import { create } from 'zustand'
+import { supabase, Profile, UserType } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-
-interface Profile {
-  id: string;
-  user_type: 'morador' | 'sindico' | 'prestador' | null;
-  full_name: string | null;
-  avatar_url: string | null;
+interface AuthState {
+  user: any | null
+  profile: Profile | null
+  isLoading: boolean
+  signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
-interface AuthContextType {
-  user: User | null;
-  profile: Profile | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
-}
+export const useAuth = create<AuthState>((set, get) => ({
+  user: null,
+  profile: null,
+  isLoading: true,
 
-const AuthContext = createContext<AuthContextType>({ 
-  user: null, 
-  profile: null, 
-  loading: true,
-  signOut: async () => {}
-});
+  signOut: async () => {
+    await supabase.auth.signOut()
+    set({ user: null, profile: null })
+  },
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  refreshProfile: async () => {
+    const { user } = get()
+    if (!user) return
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (!error && profile) {
+      set({ profile })
+    }
+  },
+}))
+
+// Hook para usar no React
+export const useAuthState = () => {
+  const { user, profile, isLoading, signOut, refreshProfile } = useAuth()
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      
+    // Verifica sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      set({ user: session?.user ?? null, isLoading: false })
+      setIsInitialized(true)
+    })
+
+    // Escuta mudanças de autenticação
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      set({ user: session?.user ?? null, isLoading: false })
+
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        // Busca perfil do usuário
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+
+        set({ profile: profile || null })
+      } else {
+        set({ profile: null })
       }
-      setLoading(false);
-    };
+    })
 
-    const fetchProfile = async (userId: string) => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (data && !error) {
-        setProfile(data);
-      }
-    };
+    return () => subscription.unsubscribe()
+  }, [])
 
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-        setProfile(null);
-        
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  return (
-    <AuthContext.Provider value={{ 
-      user, 
-      profile, 
-      loading,
-      signOut 
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return {
+    user,
+    profile,
+    isLoading: isLoading || !isInitialized,
+    signOut,
+    refreshProfile,
+    isAuthenticated: !!user,
+  }
 }
-
-export const useAuth = () => useContext(AuthContext);
