@@ -1,3 +1,3 @@
-# Bom Prédio — Versão Next.js (limpa)
+# Bom Prédio — Migração automática inicial
 
-Siga as instruções em .env.example antes de instalar dependências.
+Verifica e ajusta os componentes migrados.
