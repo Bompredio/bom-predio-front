@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, Administradora, Condominio, PrestadorServico } from '@/lib/supabase'
-import { useAuthState } from '@/hooks/useAuth'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 export default function AdministradoraDashboard() {
-  const { profile } = useAuthState()
+  const { profile } = useAuth()
   const [administradora, setAdministradora] = useState<Administradora | null>(null)
   const [condominios, setCondominios] = useState<Condominio[]>([])
   const [prestadores, setPrestadores] = useState<PrestadorServico[]>([])
@@ -16,7 +16,6 @@ export default function AdministradoraDashboard() {
 
     const fetchData = async () => {
       try {
-        // Busca dados da administradora
         const { data: adminData } = await supabase
           .from('administradoras')
           .select('*')
@@ -26,7 +25,6 @@ export default function AdministradoraDashboard() {
         setAdministradora(adminData)
 
         if (adminData) {
-          // Busca condomínios administrados
           const { data: condominiosData } = await supabase
             .from('condominios')
             .select('*')
@@ -34,7 +32,6 @@ export default function AdministradoraDashboard() {
 
           setCondominios(condominiosData || [])
 
-          // Busca prestadores da administradora
           const { data: prestadoresData } = await supabase
             .from('prestadores_servicos')
             .select('*')
@@ -62,7 +59,6 @@ export default function AdministradoraDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-primary-navy text-white p-6">
         <div className="container mx-auto">
           <h1 className="text-2xl font-bold">Bom Prédio - Administradora</h1>
@@ -73,7 +69,6 @@ export default function AdministradoraDashboard() {
       </header>
 
       <div className="container mx-auto p-6">
-        {/* Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-600 mb-2">Condomínios</h3>
@@ -93,7 +88,6 @@ export default function AdministradoraDashboard() {
           </div>
         </div>
 
-        {/* Condomínios */}
         <div className="card mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-primary-navy">Condomínios Administrados</h2>
@@ -122,7 +116,6 @@ export default function AdministradoraDashboard() {
           </div>
         </div>
 
-        {/* Prestadores */}
         <div className="card">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-primary-navy">Prestadores de Serviços</h2>
