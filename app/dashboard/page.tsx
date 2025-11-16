@@ -1,54 +1,41 @@
-'use client';
+'use client'
 
-import { useAuth } from '@/hooks/useAuth';
-import UserTypeSetup from '../components/UserTypeSetup';
-import DashboardMorador from './components/DashboardMorador';
-import DashboardSindico from './components/DashboardSindico';
-import DashboardPrestador from './components/DashboardPrestador';
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuthState } from '@/hooks/useAuth'
+import UserTypeSetup from '../components/UserTypeSetup'
 
 export default function DashboardPage() {
-  const { user, profile, loading } = useAuth();
+  const { profile, isLoading } = useAuthState()
+  const router = useRouter()
 
-  // Mostrar loading
-  if (loading) {
+  useEffect(() => {
+    if (!isLoading && profile?.user_type) {
+      // Redireciona para o dashboard específico baseado no tipo de usuário
+      router.push(`/dashboard/${profile.user_type}`)
+    }
+  }, [profile, isLoading, router])
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-gold"></div>
       </div>
-    );
+    )
   }
 
-  // Se não está logado, redirecionar para login
-  if (!user) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-    return null;
-  }
-
-  // Se usuário não tem tipo definido, mostrar setup
+  // Se não tem tipo de usuário definido, mostra o setup
   if (!profile?.user_type) {
-    return <UserTypeSetup />;
+    return <UserTypeSetup />
   }
 
-  // Renderizar dashboard baseado no tipo de usuário
-  const renderDashboard = () => {
-    switch (profile.user_type) {
-      case 'sindico':
-        return <DashboardSindico />;
-      case 'prestador':
-        return <DashboardPrestador />;
-      default:
-        return <DashboardMorador />;
-    }
-  };
-
+  // Loading durante o redirecionamento
   return (
-    <div className="min-h-screen bg-gray-50">
-      {renderDashboard()}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-gold mx-auto mb-4"></div>
+        <p className="text-primary-navy">Redirecionando para seu dashboard...</p>
+      </div>
     </div>
-  );
+  )
 }
