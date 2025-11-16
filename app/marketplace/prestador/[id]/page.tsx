@@ -1,149 +1,149 @@
-'use client';
+'use client'
 
-
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
-
-// Novas importações da pasta ratings
-import RatingSummary from '../../../components/ratings/Summary';
-import RatingList from '../../../components/ratings/List';
-import RatingForm from '../../../components/ratings/Form';
-
-interface Prestador {
-  id: string;
-  full_name: string;
-  avatar_url: string;
-  bio: string;
-  services: string[];
-  user_type: string;
-}
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import Image from 'next/image'
+import { supabase, PrestadorServico, Rating } from '@/lib/supabase'
 
 export default function PrestadorProfile() {
-  const params = useParams();
-  const { user } = useAuth();
-  const [prestador, setPrestador] = useState<Prestador | null>(null);
-  const [loading, setLoading] = useState(true);
+  const params = useParams()
+  const [prestador, setPrestador] = useState<PrestadorServico | null>(null)
+  const [ratings, setRatings] = useState<Rating[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetchPrestador();
-  }, [params.id]);
+    const fetchPrestador = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('prestadores_servicos')
+          .select('*')
+          .eq('id', params.id)
+          .single()
 
-  const fetchPrestador = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', params.id)
-      .single();
+        if (error) throw error
+        setPrestador(data)
 
-    if (data && !error) {
-      setPrestador(data);
+        // Buscar avaliações
+        const { data: ratingsData } = await supabase
+          .from('ratings')
+          .select('*')
+          .eq('prestador_id', params.id)
+
+        setRatings(ratingsData || [])
+      } catch (error) {
+        console.error('Error fetching prestador:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    setLoading(false);
-  };
 
-  if (loading) {
+    if (params.id) {
+      fetchPrestador()
+    }
+  }, [params.id])
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-gold"></div>
       </div>
-    );
+    )
   }
 
   if (!prestador) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Prestador não encontrado</h1>
-          <p className="text-gray-600 mt-2">O prestador que você está procurando não existe.</p>
+          <h1 className="text-2xl font-bold text-primary-navy mb-4">
+            Prestador não encontrado
+          </h1>
+          <p className="text-gray-600">
+            O prestador de serviços que você está procurando não existe.
+          </p>
         </div>
       </div>
-    );
+    )
   }
 
-  const isOwnProfile = user?.id === prestador.id;
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex items-start space-x-6">
-            <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center">
-              {prestador.avatar_url ? (
-                <img 
-                  src={prestador.avatar_url} 
-                  alt={prestador.full_name}
-                  className="w-24 h-24 rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-2xl text-gray-600">
-                  {prestador.full_name?.charAt(0).toUpperCase()}
-                </span>
-              )}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="card mb-6">
+          <h1 className="text-3xl font-bold text-primary-navy mb-2">
+            {prestador.nome_empresa}
+          </h1>
+          <p className="text-lg text-gray-600 mb-4 capitalize">
+            {prestador.tipo_servico}
+          </p>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <span className="text-yellow-400 text-lg">⭐</span>
+              <span className="ml-1 text-gray-700">
+                {ratings.length > 0 
+                  ? (ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length).toFixed(1)
+                  : '0.0'
+                }
+              </span>
             </div>
-            
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">{prestador.full_name}</h1>
-              <p className="text-gray-600 mt-2">{prestador.bio || 'Prestador de serviços no condomínio'}</p>
-              
-              {prestador.services && prestador.services.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="font-semibold text-gray-900">Serviços oferecidos:</h3>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {prestador.services.map((service, index) => (
-                      <span 
-                        key={index}
-                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-                      >
-                        {service}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <span className="text-gray-500">•</span>
+            <span className="text-gray-600">{ratings.length} avaliações</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <RatingSummary prestadorId={prestador.id} />
-            <RatingList prestadorId={prestador.id} />
+          <div className="lg:col-span-2">
+            <div className="card mb-6">
+              <h2 className="text-xl font-semibold text-primary-navy mb-4">
+                Sobre
+              </h2>
+              <p className="text-gray-600">
+                Prestador de serviços especializado em {prestador.tipo_servico}.
+              </p>
+            </div>
+
+            <div className="card">
+              <h2 className="text-xl font-semibold text-primary-navy mb-4">
+                Avaliações
+              </h2>
+              {ratings.length > 0 ? (
+                <div className="space-y-4">
+                  {ratings.map((rating) => (
+                    <div key={rating.id} className="border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex items-center mb-2">
+                        <div className="flex text-yellow-400">
+                          {'⭐'.repeat(rating.rating)}
+                        </div>
+                        <span className="text-sm text-gray-500 ml-2">
+                          {new Date(rating.created_at).toLocaleDateString('pt-PT')}
+                        </span>
+                      </div>
+                      <p className="text-gray-700">{rating.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">
+                  Nenhuma avaliação ainda.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">
-            {!isOwnProfile && user && (
-              <RatingForm 
-                prestadorId={prestador.id}
-                onRatingSubmitted={fetchPrestador}
-              />
-            )}
-            
-            {!user && (
-              <div className="bg-white p-6 rounded-lg shadow-sm border text-center">
-                <h3 className="text-lg font-semibold mb-2">Faça login para avaliar</h3>
-                <p className="text-gray-600 mb-4">Entre na sua conta para deixar uma avaliação.</p>
-                <button 
-                  onClick={() => window.location.href = '/login'}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                >
-                  Fazer Login
-                </button>
-              </div>
-            )}
+            <div className="card">
+              <h3 className="font-semibold text-primary-navy mb-4">Contactos</h3>
+              <p className="text-gray-600 mb-2">{prestador.contacto}</p>
+              <p className="text-gray-600">{prestador.email}</p>
+            </div>
 
-            {isOwnProfile && (
-              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">Seu Perfil</h3>
-                <p className="text-blue-700">
-                  Esta é a visualização pública do seu perfil. As avaliações aparecerão aqui.
-                </p>
-              </div>
-            )}
+            <div className="card">
+              <button className="btn-primary w-full">
+                Solicitar Orçamento
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
