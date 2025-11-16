@@ -1,85 +1,66 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import RatingStars from './Stars';
-
-interface Rating {
-  id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  cliente: {
-    full_name: string;
-  }[];
-}
+import { useEffect, useState } from 'react'
+import { supabase, Rating as RatingType } from '@/lib/supabase'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 interface RatingListProps {
-  prestadorId: string;
+  prestadorId: string
 }
 
 export default function RatingList({ prestadorId }: RatingListProps) {
-  const [ratings, setRatings] = useState<Rating[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth()
+  const [ratings, setRatings] = useState<RatingType[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const fetchRatings = async () => {
-    const { data, error } = await supabase
-      .from('ratings')
-      .select(`
-        id,
-        rating,
-        comment,
-        created_at,
-        cliente:cliente_id (
-          full_name
-        )
-      `)
-      .eq('prestador_id', prestadorId)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('*')
+        .eq('prestador_id', prestadorId)
+        .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Erro ao carregar avaliações:', error);
-    } else {
-      setRatings(data || []);
+      if (error) throw error
+      setRatings(data || [])
+    } catch (error) {
+      console.error('Error fetching ratings:', error)
+    } finally {
+      setIsLoading(false)
     }
-    setLoading(false);
-  };
+  }
 
   useEffect(() => {
-    fetchRatings();
-  }, [prestadorId]);
+    fetchRatings()
+  }, [prestadorId])
 
-  if (loading) {
-    return <div className="text-center py-4">Carregando avaliações...</div>;
+  if (isLoading) {
+    return <div className="text-center py-4">A carregar avaliações...</div>
   }
 
   if (ratings.length === 0) {
-    return <div className="text-center py-4 text-gray-500">Nenhuma avaliação ainda.</div>;
+    return (
+      <div className="text-center py-8 text-gray-500">
+        Ainda não há avaliações para este prestador.
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold">Avaliações ({ratings.length})</h3>
-      
+    <div className="space-y-4">
       {ratings.map((rating) => (
-        <div key={rating.id} className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <p className="font-medium text-gray-900">
-                {rating.cliente[0]?.full_name || 'Cliente'}
-              </p>
-              <RatingStars rating={rating.rating} size="sm" />
+        <div key={rating.id} className="border-b border-gray-200 pb-4 last:border-0">
+          <div className="flex items-center mb-2">
+            <div className="flex text-yellow-400">
+              {'⭐'.repeat(rating.rating)}
             </div>
-            <span className="text-sm text-gray-500">
-              {new Date(rating.created_at).toLocaleDateString('pt-BR')}
+            <span className="text-sm text-gray-500 ml-2">
+              {new Date(rating.created_at).toLocaleDateString('pt-PT')}
             </span>
           </div>
-          
-          {rating.comment && (
-            <p className="text-gray-700 mt-2">{rating.comment}</p>
-          )}
+          <p className="text-gray-700">{rating.comment}</p>
         </div>
       ))}
     </div>
-  );
+  )
 }
