@@ -85,5 +85,3 @@ export interface Rating {
   comment: string
   created_at: string
 }
-
-// EOF
