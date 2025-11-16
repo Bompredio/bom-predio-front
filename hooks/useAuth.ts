@@ -1,4 +1,3 @@
-```typescript
 import { create } from 'zustand'
 import { supabase, Profile, UserType } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
@@ -45,7 +44,10 @@ export const useAuthState = () => {
   useEffect(() => {
     // Verifica sessão atual
     supabase.auth.getSession().then(({ data: { session } }) => {
-      set({ user: session?.user ?? null, isLoading: false })
+      useAuth.setState({ 
+        user: session?.user ?? null, 
+        isLoading: false 
+      })
       setIsInitialized(true)
     })
 
@@ -53,7 +55,10 @@ export const useAuthState = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      set({ user: session?.user ?? null, isLoading: false })
+      useAuth.setState({ 
+        user: session?.user ?? null, 
+        isLoading: false 
+      })
 
       if (session?.user) {
         // Busca perfil do usuário
@@ -63,9 +68,9 @@ export const useAuthState = () => {
           .eq('id', session.user.id)
           .single()
 
-        set({ profile: profile || null })
+        useAuth.setState({ profile: profile || null })
       } else {
-        set({ profile: null })
+        useAuth.setState({ profile: null })
       }
     })
 
