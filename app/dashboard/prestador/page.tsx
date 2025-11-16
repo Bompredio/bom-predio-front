@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, PrestadorServico, Service, Rating } from '@/lib/supabase'
-import { useAuthState } from '@/hooks/useAuth'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 export default function PrestadorDashboard() {
-  const { profile } = useAuthState()
+  const { profile } = useAuth()
   const [prestador, setPrestador] = useState<PrestadorServico | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [ratings, setRatings] = useState<Rating[]>([])
@@ -16,7 +16,6 @@ export default function PrestadorDashboard() {
 
     const fetchData = async () => {
       try {
-        // Busca dados do prestador
         const { data: prestadorData } = await supabase
           .from('prestadores_servicos')
           .select('*')
@@ -26,7 +25,6 @@ export default function PrestadorDashboard() {
         setPrestador(prestadorData)
 
         if (prestadorData) {
-          // Busca serviços do prestador
           const { data: servicesData } = await supabase
             .from('services')
             .select('*')
@@ -34,7 +32,6 @@ export default function PrestadorDashboard() {
 
           setServices(servicesData || [])
 
-          // Busca avaliações do prestador
           const { data: ratingsData } = await supabase
             .from('ratings')
             .select('*')
@@ -67,7 +64,6 @@ export default function PrestadorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-primary-navy text-white p-6">
         <div className="container mx-auto">
           <h1 className="text-2xl font-bold">Bom Prédio - Prestador</h1>
@@ -78,7 +74,6 @@ export default function PrestadorDashboard() {
       </header>
 
       <div className="container mx-auto p-6">
-        {/* Métricas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-600 mb-2">Serviços Totais</h3>
@@ -103,7 +98,6 @@ export default function PrestadorDashboard() {
           </div>
         </div>
 
-        {/* Serviços Recentes */}
         <div className="card mb-8">
           <h2 className="text-xl font-bold text-primary-navy mb-6">Serviços Recentes</h2>
           
@@ -142,7 +136,6 @@ export default function PrestadorDashboard() {
           </div>
         </div>
 
-        {/* Avaliações */}
         <div className="card">
           <h2 className="text-xl font-bold text-primary-navy mb-6">Últimas Avaliações</h2>
           
