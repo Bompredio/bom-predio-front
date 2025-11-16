@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { supabase, UserType } from '@/lib/supabase'
-import { useAuthState } from '@/hooks/useAuth'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 export default function UserTypeSetup() {
-  const { user, refreshProfile } = useAuthState()
+  const { user, refreshProfile } = useAuth()
   const [selectedType, setSelectedType] = useState<UserType | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
