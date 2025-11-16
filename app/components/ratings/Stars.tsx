@@ -1,12 +1,10 @@
-'use client';
-
-import { useState } from 'react';
+'use client'
 
 interface RatingStarsProps {
-  rating: number;
-  onRatingChange?: (rating: number) => void;
-  editable?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  rating: number
+  onRatingChange?: (rating: number) => void
+  editable?: boolean
+  size?: 'sm' | 'md' | 'lg'
 }
 
 export default function RatingStars({ 
@@ -15,58 +13,40 @@ export default function RatingStars({
   editable = false, 
   size = 'md' 
 }: RatingStarsProps) {
-  const [hoverRating, setHoverRating] = useState(0);
-
   const sizeClasses = {
     sm: 'text-lg',
     md: 'text-2xl',
     lg: 'text-3xl'
-  };
+  }
 
   const handleClick = (newRating: number) => {
     if (editable && onRatingChange) {
-      onRatingChange(newRating);
+      onRatingChange(newRating)
     }
-  };
+  }
 
-  const handleMouseEnter = (newRating: number) => {
+  const handleMouseEnter = (hoverRating: number) => {
     if (editable) {
-      setHoverRating(newRating);
+      // Você pode adicionar lógica de hover aqui se desejar
     }
-  };
-
-  const handleMouseLeave = () => {
-    if (editable) {
-      setHoverRating(0);
-    }
-  };
+  }
 
   return (
     <div className="flex space-x-1">
-      {[1, 2, 3, 4, 5].map((star) => {
-        let starClass = 'text-gray-300';
-        if (hoverRating >= star) {
-          starClass = 'text-yellow-400';
-        } else if (!hoverRating && rating >= star) {
-          starClass = 'text-yellow-400';
-        }
-
-        return (
-          <button
-            key={star}
-            type="button"
-            className={`${starClass} ${sizeClasses[size]} ${
-              editable ? 'cursor-pointer hover:scale-110 transition-transform' : ''
-            }`}
-            onClick={() => handleClick(star)}
-            onMouseEnter={() => handleMouseEnter(star)}
-            onMouseLeave={handleMouseLeave}
-            disabled={!editable}
-          >
-            ★
-          </button>
-        );
-      })}
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => handleClick(star)}
+          onMouseEnter={() => handleMouseEnter(star)}
+          disabled={!editable}
+          className={`${sizeClasses[size]} ${
+            editable ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'
+          } ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
+        >
+          ⭐
+        </button>
+      ))}
     </div>
-  );
+  )
 }
