@@ -2,16 +2,15 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthState } from '@/hooks/useAuth'
+import { useAuth } from '@/app/providers/AuthProvider'
 import UserTypeSetup from '../components/UserTypeSetup'
 
 export default function DashboardPage() {
-  const { profile, isLoading } = useAuthState()
+  const { profile, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (!isLoading && profile?.user_type) {
-      // Redireciona para o dashboard específico baseado no tipo de usuário
       router.push(`/dashboard/${profile.user_type}`)
     }
   }, [profile, isLoading, router])
@@ -24,12 +23,10 @@ export default function DashboardPage() {
     )
   }
 
-  // Se não tem tipo de usuário definido, mostra o setup
   if (!profile?.user_type) {
     return <UserTypeSetup />
   }
 
-  // Loading durante o redirecionamento
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
