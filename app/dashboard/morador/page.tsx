@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase, Condominio, CondominioMorador, Profile } from '@/lib/supabase'
-import { useAuthState } from '@/hooks/useAuth'
+import { supabase, Condominio, CondominioMorador } from '@/lib/supabase'
+import { useAuth } from '@/app/providers/AuthProvider'
 
 export default function MoradorDashboard() {
-  const { profile, user } = useAuthState()
+  const { profile, user } = useAuth()
   const [condominio, setCondominio] = useState<Condominio | null>(null)
   const [moradorInfo, setMoradorInfo] = useState<CondominioMorador | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -15,7 +15,6 @@ export default function MoradorDashboard() {
 
     const fetchData = async () => {
       try {
-        // Busca informações do morador no condomínio
         const { data: moradorData } = await supabase
           .from('condominio_moradores')
           .select('*')
@@ -25,7 +24,6 @@ export default function MoradorDashboard() {
         setMoradorInfo(moradorData)
 
         if (moradorData) {
-          // Busca dados do condomínio
           const { data: condominioData } = await supabase
             .from('condominios')
             .select('*')
@@ -56,7 +54,6 @@ export default function MoradorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-primary-navy text-white p-6">
         <div className="container mx-auto">
           <div className="flex justify-between items-center">
@@ -76,7 +73,6 @@ export default function MoradorDashboard() {
       </header>
 
       <div className="container mx-auto p-6">
-        {/* Informações do Condomínio */}
         {condominio && (
           <div className="card mb-8">
             <h2 className="text-xl font-bold text-primary-navy mb-4">Meu Condomínio</h2>
@@ -97,7 +93,6 @@ export default function MoradorDashboard() {
           </div>
         )}
 
-        {/* Ações Rápidas */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <button className="card text-left hover:shadow-xl transition-shadow duration-200">
             <div className="text-2xl mb-2">📋</div>
@@ -124,7 +119,6 @@ export default function MoradorDashboard() {
           </button>
         </div>
 
-        {/* Ações do Síndico */}
         {isSindico && (
           <div className="card">
             <h2 className="text-xl font-bold text-primary-navy mb-4">Ações do Síndico</h2>
