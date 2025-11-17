@@ -1,34 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const url = import.meta.env.VITE_SUPABASE_URL
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Indica se Supabase está disponível
-export const SUPABASE_AVAILABLE = !!supabaseUrl && !!supabaseAnonKey
-
-let supabase = null
-
-if (SUPABASE_AVAILABLE) {
-  supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Se não houver URL/KEY, exportamos null para evitar chamadas inválidas
+if (!url || !key) {
+  console.warn('⚠️ Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no Vercel para usar funcionalidades reais.')
+  // export null (o resto do app deve checar se supabase existe)
+  export const supabase = null
 } else {
-  // Não lançar erro: exporta um "mock" mínimo para evitar crash da app
-  console.warn('[Bom Prédio] Supabase não configurado — usando fallback mock.')
-  supabase = {
-    auth: {
-      async getSession() { return { data: { session: null } } },
-      onAuthStateChange() { return { data: { subscription: { unsubscribe() {} } } } },
-      async signInWithOtp() { return { error: new Error('Supabase não configurado') } },
-      async signUp() { return { error: new Error('Supabase não configurado') } },
-      async signOut() { return {} },
-    },
-    from() {
-      return {
-        select: async () => ({ error: new Error('Supabase não configurado'), data: null }),
-        insert: async () => ({ error: new Error('Supabase não configurado'), data: null }),
-      }
-    }
-  }
+  export const supabase = createClient(url, key)
 }
-
-export { supabase }
-export default supabase
