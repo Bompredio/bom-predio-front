@@ -1,11 +1,1 @@
-// --- SNIPPET para integrar nas Routes do src/App.jsx ---
-import Marketplace from './pages/Marketplace'
-import AdminProfile from './pages/AdminProfile'
-import RequestForm from './pages/RequestForm'
-import CompareResults from './pages/CompareResults'
-
-// dentro de <Routes> ... </Routes> adicione:
-<Route path="/" element={<Marketplace />} />
-<Route path="/admin/:id" element={<AdminProfile />} />
-<Route path="/request" element={<RequestForm />} />
-<Route path="/compare" element={<CompareResults />} />
+// routes snippet placeholder
