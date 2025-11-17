@@ -1,1 +1,0 @@
-// CompareResults.jsx content placeholder
