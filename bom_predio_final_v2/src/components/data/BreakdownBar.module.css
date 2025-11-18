@@ -1,0 +1,6 @@
+@import '../../styles/tokens.css';
+.row{display:flex;align-items:center;gap:8px}
+.label{min-width:90px;text-transform:capitalize}
+.bar{flex:1;background:#eee;height:8px;border-radius:8px;overflow:hidden}
+.fill{height:100%;background:var(--brand-primary);border-radius:8px}
+.percent{min-width:36px;text-align:right}

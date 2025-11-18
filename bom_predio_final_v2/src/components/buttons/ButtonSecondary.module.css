@@ -1,0 +1,2 @@
+@import '../../styles/tokens.css';
+.button{background:transparent;color:var(--brand-secondary);border:1px solid var(--brand-secondary);padding:var(--spacing-3) var(--spacing-5);border-radius:var(--radius-md);font-weight:var(--weight-semibold)}
