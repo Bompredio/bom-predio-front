@@ -1,17 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
-import './index.css'
-
-// Verificação segura do elemento root
-const rootElement = document.getElementById('root')
-
-if (!rootElement) {
-  throw new Error('Elemento root não encontrado! Verifique o index.html')
-}
-
-ReactDOM.createRoot(rootElement).render(
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import App from './App'
+import './styles/globals.css'
+import './styles/tokens.css'
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />

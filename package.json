@@ -1,6 +1,6 @@
 {
-  "name": "bom-predio-mvp",
-  "version": "0.2.0",
+  "name": "bom-predio-frontend",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -11,10 +11,9 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.14.1",
-    "@supabase/supabase-js": "^2.31.0"
+    "@supabase/supabase-js": "^2.24.0"
   },
   "devDependencies": {
-    "vite": "^5.0.0",
-    "@vitejs/plugin-react": "^4.0.0"
+    "vite": "^5.4.21"
   }
 }
