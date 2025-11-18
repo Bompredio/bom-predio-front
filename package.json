@@ -15,6 +15,7 @@
     "classnames": "^2.3.2"
   },
   "devDependencies": {
+      "@vitejs/plugin-react": "^4.0.0",
     "vite": "^5.4.21"
   }
 }
