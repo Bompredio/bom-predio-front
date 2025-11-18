@@ -1,17 +1,17 @@
 import React from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+
+import Header from './components/Header'
 import Marketplace from './pages/Marketplace'
 import AdminProfile from './pages/AdminProfile'
 import CompareResults from './pages/CompareResults'
 
-export default function App(){
+export default function App() {
   return (
-    <div style={{minHeight:'100vh', background:'var(--bg-default)'}}>
-      <nav style={{padding:12, display:'flex', gap:12, alignItems:'center', background:'var(--brand-primary)', color:'#fff'}}>
-        <Link to="/" style={{color:'#fff',textDecoration:'none',fontWeight:700}}>🏢 Bom Prédio</Link>
-        <Link to="/compare" style={{color:'#fff',textDecoration:'none'}}>Comparar</Link>
-      </nav>
-      <main style={{padding:16}}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-default)' }}>
+      <Header />
+
+      <main style={{ padding: 16, maxWidth: 1280, margin: '0 auto' }}>
         <Routes>
           <Route path="/" element={<Marketplace />} />
           <Route path="/admin/:id" element={<AdminProfile />} />
