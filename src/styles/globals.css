@@ -1,0 +1,29 @@
+@import './tokens.css';
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  font-family: var(--font-inter);
+  background: var(--bg-default);
+  color: var(--text-primary);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+.header-nav{display:flex;align-items:center;gap:12px;padding:12px;background:var(--brand-primary);color:#fff}
+.header-nav a{color:#fff;text-decoration:none;font-weight:700}
+.card{background:var(--surface-default);border:1px solid var(--border-default);border-radius:12px;padding:16px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:8px;border:none;cursor:pointer}
+.btn-primary{background:var(--brand-secondary);color:var(--brand-primary);font-weight:600}
+.btn-secondary{background:transparent;border:1px solid var(--brand-secondary);color:var(--brand-secondary);font-weight:600}
+.searchbar{display:flex;gap:8px;align-items:center;background:var(--surface-default);padding:10px;border-radius:10px;border:1px solid var(--border-default)}
+.card-admin{display:flex;flex-direction:column;gap:12px}
+.card-admin .header{display:flex;gap:12px;align-items:center}
+.logo-placeholder{width:48px;height:48px;border-radius:10px;background:#f3f3f3}
+.service-tag{padding:6px 8px;border-radius:999px;background:var(--bg-default);font-size:13px}
+.score-badge{background:var(--brand-secondary);color:var(--brand-primary);padding:4px 8px;border-radius:8px;font-weight:700}
+.form-row{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.input, textarea, select{padding:10px;border-radius:8px;border:1px solid var(--border-default);font-size:14px}
+.footer-space{height:40px}
