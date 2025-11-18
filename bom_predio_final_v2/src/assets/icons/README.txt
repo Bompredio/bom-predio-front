@@ -1,1 +1,0 @@
-Add icon svgs here (search, star, location, euro)

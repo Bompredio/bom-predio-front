@@ -1,1 +1,0 @@
-Add logo SVGs here: logo_bom_predio_primary.svg and logo_bom_predio_inverse.svg
