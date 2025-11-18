@@ -11,9 +11,7 @@ export default function Marketplace(){
   ]
   return (
     <div className="container">
-      <header style={{background:'var(--brand-primary)',color:'#fff',padding:16,borderRadius:8}}>
-        <h1 style={{margin:0}}>🏢 Bom Prédio</h1>
-      </header>
+      
 
       <section style={{marginTop:16}}>
         <SearchBar value={q} onChange={setQ} placeholder="Pesquisar administradoras..." />
